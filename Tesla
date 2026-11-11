@@ -1,0 +1,839 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNIPLEA - Tesla Inc. Economía & Ingeniería Industrial</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Fira+Code:wght@300;400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        tesla: '#e82127',
+                        cyanNeon: '#00f3ff',
+                        greenNeon: '#00ff66',
+                        darkBg: '#08090d',
+                        panelBg: 'rgba(15, 23, 42, 0.75)',
+                        cyberBorder: 'rgba(0, 243, 255, 0.25)'
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #06070a;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Ambient scanlines grid background */
+        .cyber-grid {
+            background-image: 
+                linear-gradient(to right, rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .hud-border {
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.15), inset 0 0 15px rgba(0, 243, 255, 0.05);
+            backdrop-filter: blur(12px);
+        }
+
+        .hud-border-tesla {
+            border: 1px solid rgba(232, 33, 39, 0.4);
+            box-shadow: 0 0 20px rgba(232, 33, 39, 0.2), inset 0 0 10px rgba(232, 33, 39, 0.08);
+            backdrop-filter: blur(12px);
+        }
+
+        .glow-text-cyan {
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.7), 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+
+        .glow-text-red {
+            text-shadow: 0 0 10px rgba(232, 33, 39, 0.8), 0 0 20px rgba(232, 33, 39, 0.4);
+        }
+
+        .glow-text-green {
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.8);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090a0f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00f3ff;
+            border-radius: 3px;
+        }
+
+        /* Slide Transition Animations */
+        .slide-enter {
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+        }
+        .slide-active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .pulse-subtle {
+            animation: pulseSubtle 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseSubtle {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        /* Custom Clip Path corners for Sci-Fi HUD aesthetics */
+        .clip-hud {
+            clip-path: polygon(
+                0 15px, 15px 0, 
+                calc(100% - 15px) 0, 100% 15px, 
+                100% calc(100% - 15px), calc(100% - 15px) 100%, 
+                15px 100%, 0 calc(100% - 15px)
+            );
+        }
+    </style>
+</head>
+<body class="cyber-grid min-h-screen flex flex-col justify-between select-none relative overflow-x-hidden">
+
+    <!-- TOP HEADER / NAV BAR HUD -->
+    <header class="w-full bg-black/80 border-b border-cyanNeon/30 px-4 py-3 sticky top-0 z-50 backdrop-blur-md flex flex-wrap justify-between items-center text-xs font-orbitron">
+        <div class="flex items-center space-x-3">
+            <div class="w-3 h-3 bg-tesla rounded-full animate-ping"></div>
+            <span class="text-tesla font-black tracking-widest text-lg">TESLA <span class="text-white text-xs font-light">| UNIPLEA OS v4.2</span></span>
+            <span class="hidden md:inline-block bg-cyanNeon/10 text-cyanNeon border border-cyanNeon/40 px-2 py-0.5 rounded text-[10px]">
+                FUNDAMENTOS DE ECONOMÍA
+            </span>
+        </div>
+
+        <div class="flex items-center space-x-4 my-1 sm:my-0">
+            <div class="text-right hidden sm:block">
+                <p class="text-gray-400 text-[10px]">INGENIERÍA INDUSTRIAL MIXTO</p>
+                <p class="text-cyanNeon text-[11px] font-mono">FECHA: 14/NOV/2026</p>
+            </div>
+            <button id="soundToggle" onclick="toggleAudioSynth()" class="px-3 py-1 border border-cyanNeon/50 text-cyanNeon hover:bg-cyanNeon/20 transition rounded flex items-center space-x-2 text-[11px]">
+                <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+                <span id="soundText">AUDIO ON</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN INTERACTIVE SLIDE CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 flex flex-col justify-center relative">
+        
+        <!-- SLIDE 1: PORTADA & PRESENTACIÓN -->
+        <section id="slide-0" class="slide-active slide-enter flex flex-col lg:flex-row items-center gap-6 my-auto">
+            <!-- Left Info Panel -->
+            <div class="lg:w-1/2 w-full space-y-5">
+                <div class="inline-block bg-tesla/20 border border-tesla text-tesla px-3 py-1 rounded-full text-xs font-mono font-semibold tracking-wider">
+                    <i class="fa-solid fa-graduation-cap mr-1"></i> UNIVERSIDAD UNIPLEA
+                </div>
+                
+                <h1 class="text-3xl md:text-5xl font-extrabold font-orbitron text-white leading-tight">
+                    ANÁLISIS ECONÓMICO Y DE INGENIERÍA: <br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-tesla via-red-400 to-cyanNeon glow-text-red">
+                        TESLA, INC.
+                    </span>
+                </h1>
+
+                <p class="text-gray-300 text-sm leading-relaxed font-sans border-l-2 border-cyanNeon pl-4">
+                    Examen 2do Parcial — Análisis de decisiones del consumidor, eficiencia en gigafactorías, estructuras oligopólicas y cobertura de riesgo en el sector industrial.
+                </p>
+
+                <!-- Team Members Card -->
+                <div class="hud-border p-4 rounded-xl bg-black/60 space-y-3">
+                    <div class="text-xs font-orbitron text-cyanNeon uppercase tracking-wider flex justify-between">
+                        <span><i class="fa-solid fa-users text-tesla mr-1"></i> Integrantes del Equipo</span>
+                        <span class="text-gray-400">ID: IND-2026</span>
+                    </div>
+                    <ul class="grid grid-cols-1 md:grid-cols-3 gap-2 font-mono text-xs">
+                        <li class="bg-cyanNeon/10 p-2 rounded border border-cyanNeon/30 text-white font-semibold flex items-center space-x-2">
+                            <i class="fa-solid fa-code text-cyanNeon text-[10px]"></i>
+                            <span>Bernardo Ramírez T.</span>
+                        </li>
+                        <li class="bg-cyanNeon/10 p-2 rounded border border-cyanNeon/30 text-white font-semibold flex items-center space-x-2">
+                            <i class="fa-solid fa-microchip text-cyanNeon text-[10px]"></i>
+                            <span>Juan Alexis Cabello S.</span>
+                        </li>
+                        <li class="bg-cyanNeon/10 p-2 rounded border border-cyanNeon/30 text-white font-semibold flex items-center space-x-2">
+                            <i class="fa-solid fa-bolt text-cyanNeon text-[10px]"></i>
+                            <span>Emanuel J. Gallegos S.</span>
+                        </li>
+                    </ul>
+                    <div class="pt-2 text-[11px] text-gray-400 flex justify-between border-t border-gray-800">
+                        <span>Profesor: <strong class="text-white">MA. Pedro Vásquez Bórquez</strong></span>
+                        <span class="text-greenNeon"><i class="fa-solid fa-circle text-[8px] mr-1"></i>Tiempo: 2:00 MIN MAX</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Interactive Tesla Roadster Spaceflight Canvas -->
+            <div class="lg:w-1/2 w-full flex flex-col items-center justify-center relative">
+                <div class="relative w-full max-w-lg aspect-square hud-border-tesla rounded-2xl overflow-hidden bg-black/80 flex items-center justify-center p-2">
+                    <canvas id="roadsterCanvas" class="w-full h-full cursor-pointer z-10"></canvas>
+                    
+                    <!-- Overlay Interactive Hint -->
+                    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none bg-black/70 border border-cyanNeon/50 px-4 py-1.5 rounded-full text-[11px] font-orbitron text-cyanNeon flex items-center space-x-2 animate-bounce">
+                        <i class="fa-solid fa-hand-pointer text-tesla"></i>
+                        <span>¡HAZ CLIC PARA ACTIVAR COHETE SPACEX!</span>
+                    </div>
+
+                    <!-- Telemetry Overlay -->
+                    <div class="absolute top-3 left-3 z-20 text-[10px] font-mono text-gray-400 space-y-0.5 pointer-events-none bg-black/60 p-2 rounded border border-white/10">
+                        <p class="text-cyanNeon">ROADSTER 2.0 ROCKET PKG</p>
+                        <p>THRUST: <span id="telemetryThrust" class="text-white">0.0 kN</span></p>
+                        <p>VELOCITY: <span id="telemetrySpeed" class="text-white">0 km/h</span></p>
+                        <p>ALTITUDE: <span id="telemetryAlt" class="text-greenNeon">ORBITAL-0</span></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: CONSUMIDOR Y EXCEDENTE -->
+        <section id="slide-1" class="slide-enter hidden space-y-5">
+            <div class="flex items-center space-x-3 border-b border-cyanNeon/30 pb-2">
+                <span class="bg-cyanNeon text-black font-black font-orbitron text-xs px-2.5 py-1 rounded">SLIDE 02</span>
+                <h2 class="text-2xl font-bold font-orbitron text-white">1. Análisis del Consumidor & Excedente en Tesla</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <!-- Maximización de Utilidad -->
+                <div class="hud-border p-5 rounded-xl bg-black/70 space-y-3">
+                    <h3 class="text-lg font-semibold font-orbitron text-cyanNeon flex items-center">
+                        <i class="fa-solid fa-chart-line mr-2 text-tesla"></i> Maximización de Utilidad (UMg / P)
+                    </h3>
+                    <p class="text-sm text-gray-300 leading-relaxed">
+                        Los compradores de Tesla maximizan su utilidad evaluando el precio contra la tecnología (FSD, aceleración, autonomía y red Supercharger).
+                    </p>
+                    
+                    <div class="bg-gray-900/90 p-3 rounded-lg border border-cyanNeon/20 font-mono text-xs space-y-2">
+                        <p class="text-greenNeon font-semibold">Cálculo de Utilidad Marginal por Peso Gastado:</p>
+                        <div class="grid grid-cols-2 gap-2 text-center text-gray-200">
+                            <div class="bg-black/50 p-2 rounded border border-gray-700">
+                                <p class="text-gray-400 text-[10px]">PRODUCTO A (Model 3)</p>
+                                <p>Precio = $250k | UMg = 100</p>
+                                <p class="text-cyanNeon font-bold mt-1">UMg/P = 0.40</p>
+                            </div>
+                            <div class="bg-black/50 p-2 rounded border border-gray-700">
+                                <p class="text-gray-400 text-[10px]">PRODUCTO B (Model Y)</p>
+                                <p>Precio = $300k | UMg = 90</p>
+                                <p class="text-tesla font-bold mt-1">UMg/P = 0.30</p>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-gray-400 italic">
+                            *Conclusión:* El consumidor obtiene mayor nivel de satisfacción por peso gastado en el Producto A (0.40 > 0.30). Reasignar presupuesto hacia A incrementa la utilidad total.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Excedente del Consumidor -->
+                <div class="hud-border p-5 rounded-xl bg-black/70 space-y-3">
+                    <h3 class="text-lg font-semibold font-orbitron text-tesla flex items-center">
+                        <i class="fa-solid fa-piggy-bank mr-2 text-cyanNeon"></i> Excedente del Consumidor & Premium
+                    </h3>
+                    <p class="text-sm text-gray-300 leading-relaxed">
+                        Tesla captura un excedente elevado gracias a la **disposición a pagar (WTP)** superior de los clientes por status eco-friendly y tecnología futurista.
+                    </p>
+
+                    <div class="space-y-2 font-mono text-xs">
+                        <div class="flex justify-between items-center bg-black/40 p-2 rounded border-l-2 border-greenNeon">
+                            <span>Disposición Máxima a Pagar (WTP):</span>
+                            <span class="text-greenNeon font-bold">$65,000 USD</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-black/40 p-2 rounded border-l-2 border-tesla">
+                            <span>Precio Real de Mercado (Cybertruck):</span>
+                            <span class="text-tesla font-bold">$55,000 USD</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-cyanNeon/10 p-2 rounded border border-cyanNeon/40 font-bold text-cyanNeon">
+                            <span>Excedente Neto del Consumidor:</span>
+                            <span>$10,000 USD / unidad</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400">
+                        Si Tesla incrementa el precio de compra, reduce el excedente del consumidor. Solo se justifica si se incorporan actualizaciones Over-the-Air (OTA) o mayor autonomía de batería.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: PRODUCCIÓN, EFICIENCIA Y COSTOS -->
+        <section id="slide-2" class="slide-enter hidden space-y-5">
+            <div class="flex items-center space-x-3 border-b border-cyanNeon/30 pb-2">
+                <span class="bg-cyanNeon text-black font-black font-orbitron text-xs px-2.5 py-1 rounded">SLIDE 03</span>
+                <h2 class="text-2xl font-bold font-orbitron text-white">2. Producción, Eficiencia & Estructura de Costos</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- Gigafactory Productivity Calculation -->
+                <div class="hud-border p-4 rounded-xl bg-black/70 space-y-3 lg:col-span-1">
+                    <h3 class="text-sm font-bold font-orbitron text-greenNeon uppercase">
+                        <i class="fa-solid fa-industry mr-1"></i> Productividad de Trabajo
+                    </h3>
+                    <div class="bg-gray-900/80 p-3 rounded text-xs font-mono space-y-1.5 border border-gray-800">
+                        <p class="text-gray-400">12 Trabajadores en Giga-Assembly:</p>
+                        <div class="flex justify-between">
+                            <span>Producción Inicial:</span>
+                            <span class="text-white">600 unid/día</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Prod. Inicial / Trabajador (Pi):</span>
+                            <span class="text-cyanNeon font-bold">50 unid/trab</span>
+                        </div>
+                        <hr class="border-gray-800">
+                        <p class="text-gray-400">Tras automatización Gigapress:</p>
+                        <div class="flex justify-between">
+                            <span>Producción Final:</span>
+                            <span class="text-white">840 unid/día</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Prod. Final / Trabajador (Pf):</span>
+                            <span class="text-cyanNeon font-bold">70 unid/trab</span>
+                        </div>
+                        <hr class="border-gray-800">
+                        <div class="bg-greenNeon/10 p-1.5 rounded border border-greenNeon/30 text-greenNeon flex justify-between font-bold">
+                            <span>INCREMENTO RELATIVO:</span>
+                            <span>+40.0 %</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cost Optimization with Automation -->
+                <div class="hud-border p-4 rounded-xl bg-black/70 space-y-3 lg:col-span-2">
+                    <h3 class="text-sm font-bold font-orbitron text-cyanNeon uppercase">
+                        <i class="fa-solid fa-calculator mr-1"></i> Optimización de Costos: Automatización Robotizada
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+                        <div class="bg-black/60 p-3 rounded border border-gray-800">
+                            <p class="text-gray-400 font-semibold mb-1">Escenario A (Manual Tradicional)</p>
+                            <p>Precio (P): $300 | Cantidad (Q): 1,000</p>
+                            <p>Costos Fijos (CF): $40,000</p>
+                            <p>Costo Var. Unitario (CVu): $180</p>
+                            <p class="mt-2 text-gray-300">Ingreso Total: <span class="text-white">$300,000</span></p>
+                            <p>Costo Total: <span class="text-white">$220,000</span></p>
+                            <p class="text-cyanNeon font-bold">Ganancia Actual (G): $80,000</p>
+                        </div>
+                        <div class="bg-black/60 p-3 rounded border border-tesla/50">
+                            <p class="text-tesla font-semibold mb-1">Escenario B (Automatizado)</p>
+                            <p>CF nuevo: $55,000 (+ $15k inversión)</p>
+                            <p>CVu nuevo: $155 (- $25 ahorro unitario)</p>
+                            <p>CV Total: $155,000</p>
+                            <p class="mt-2 text-gray-300">Costo Total nuevo: <span class="text-white">$210,000</span></p>
+                            <p class="text-greenNeon font-bold">Nueva Ganancia: $90,000</p>
+                            <p class="text-[10px] text-gray-400 mt-1">✓ Ahorro en CV: $25,000 | Beneficio Neto: +$10,000</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-300">
+                        **Dictamen Económico:** La inversión en automatización de Tesla es **altamente rentable** ya que el ahorro en costos variables supera ampliamente el incremento en costos fijos operacionales.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: ESTRUCTURA DE MERCADO -->
+        <section id="slide-3" class="slide-enter hidden space-y-5">
+            <div class="flex items-center space-x-3 border-b border-cyanNeon/30 pb-2">
+                <span class="bg-cyanNeon text-black font-black font-orbitron text-xs px-2.5 py-1 rounded">SLIDE 04</span>
+                <h2 class="text-2xl font-bold font-orbitron text-white">3. Estructura de Mercado Identificada</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="hud-border p-4 rounded-xl bg-black/70 space-y-2">
+                    <div class="text-tesla text-2xl"><i class="fa-solid fa-crown"></i></div>
+                    <h3 class="text-base font-bold font-orbitron text-white">Oligopolio Tecnológico</h3>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        El sector global de Vehículos Eléctricos de Alta Gama está dominado por pocos competidores globales (Tesla, BYD, Rivian, Hyundai Group).
+                    </p>
+                </div>
+
+                <div class="hud-border p-4 rounded-xl bg-black/70 space-y-2">
+                    <div class="text-cyanNeon text-2xl"><i class="fa-solid fa-shield-halved"></i></div>
+                    <h3 class="text-base font-bold font-orbitron text-white">Altas Barreras de Entrada</h3>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Inversión de capital masiva en Giga-factories, patentes de química de batería (4680 cells), software de Inteligencia Artificial Autónoma y red propia de Superchargers.
+                    </p>
+                </div>
+
+                <div class="hud-border p-4 rounded-xl bg-black/70 space-y-2">
+                    <div class="text-greenNeon text-2xl"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                    <h3 class="text-base font-bold font-orbitron text-white">Diferenciación de Producto</h3>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Tesla no compite en precios bajos; compite mediante innovación tecnológica continua, software Full Self-Driving (FSD) y ecosistema energético integrado.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Strategic Interdependence Box -->
+            <div class="hud-border-tesla p-4 rounded-xl bg-gradient-to-r from-black via-gray-900 to-black text-xs font-mono">
+                <span class="text-tesla font-bold font-orbitron text-sm uppercase">Interdependencia Estratégica en el Oligopolio:</span>
+                <p class="text-gray-300 mt-1">
+                    Cualquier ajuste de precios en el Model 3/Y fuerza de forma inmediata una réplica de competidores como BYD o Ford Mach-E. Tesla mantiene el poder de fijador de precios (Price Setter) por eficiencia en margen bruto por unidad.
+                </p>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: PRINCIPALES RIESGOS ECONÓMICOS -->
+        <section id="slide-4" class="slide-enter hidden space-y-5">
+            <div class="flex items-center space-x-3 border-b border-cyanNeon/30 pb-2">
+                <span class="bg-cyanNeon text-black font-black font-orbitron text-xs px-2.5 py-1 rounded">SLIDE 05</span>
+                <h2 class="text-2xl font-bold font-orbitron text-white">4. Evaluación de Riesgos Económicos & Financieros</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Currency & Interest Rate Risk -->
+                <div class="hud-border p-4 rounded-xl bg-black/70 space-y-3">
+                    <h3 class="text-sm font-bold font-orbitron text-tesla flex items-center">
+                        <i class="fa-solid fa-triangle-exclamation mr-2"></i> 1. Riesgo Cambiario & Tasa de Interés
+                    </h3>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        Importación de maquinaria en USD/EUR y materias primas (Litio/Níquel). Las fluctuaciones imprevistas en el tipo de cambio encarecen la estructura de Costos Variables.
+                    </p>
+                    <!-- Credit Math exercise -->
+                    <div class="bg-black/80 p-3 rounded border border-gray-800 font-mono text-[11px]">
+                        <p class="text-cyanNeon font-semibold">Ejercicio de Riesgo de Crédito Financiero:</p>
+                        <p>Capital ($C$): $500,000 USD | Tasa simple ($i$): 12% anual | Tiempo ($t$): 2 años</p>
+                        <div class="text-greenNeon font-bold mt-1">
+                            Interés Generado: $I = 500,000 \times 0.12 \times 2 = \$120,000$ USD<br>
+                            Monto Total a Pagar ($M$): \$620,000 USD
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Supply Chain & Commodity Volatility -->
+                <div class="hud-border p-4 rounded-xl bg-black/70 space-y-3">
+                    <h3 class="text-sm font-bold font-orbitron text-cyanNeon flex items-center">
+                        <i class="fa-solid fa-gears mr-2"></i> 2. Cadena de Suministro & Escasez de Tiempo
+                    </h3>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        El tiempo de recuperación del capital (Payback Period) se extiende dramáticamente si existen cuellos de botella en la fabricación de celdas 4680 o microchips.
+                    </p>
+                    <div class="bg-black/80 p-3 rounded border border-gray-800 font-mono text-[11px] space-y-1">
+                        <div class="flex justify-between text-gray-300">
+                            <span>• Volatilidad del Litio/Cobalto:</span>
+                            <span class="text-tesla">+28% Inflación de insumos</span>
+                        </div>
+                        <div class="flex justify-between text-gray-300">
+                            <span>• Obsolescencia Tecnológica:</span>
+                            <span class="text-cyanNeon">Ciclo rápido (3 a 5 años)</span>
+                        </div>
+                        <div class="flex justify-between text-gray-300">
+                            <span>• Tiempo de Recuperación:</span>
+                            <span class="text-yellow-400">Sensible al volumen de venta</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6: PROPUESTAS DE SOLUCIÓN Y BENEFICIOS -->
+        <section id="slide-5" class="slide-enter hidden space-y-5">
+            <div class="flex items-center space-x-3 border-b border-cyanNeon/30 pb-2">
+                <span class="bg-cyanNeon text-black font-black font-orbitron text-xs px-2.5 py-1 rounded">SLIDE 06</span>
+                <h2 class="text-2xl font-bold font-orbitron text-white">5. Propuestas de Solución y Conclusiones Integrales</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Solutions -->
+                <div class="hud-border p-4 rounded-xl bg-black/70 space-y-3">
+                    <h3 class="text-sm font-bold font-orbitron text-greenNeon flex items-center">
+                        <i class="fa-solid fa-lightbulb mr-2"></i> Estrategias de Cobertura Económica
+                    </h3>
+                    <ul class="space-y-2 text-xs text-gray-300 font-sans">
+                        <li class="bg-black/50 p-2 rounded border-l-2 border-greenNeon">
+                            <strong>1. Cobertura Cambiaria (FX Forwards / Swaps):</strong> Contratar instrumentos derivados financieros para congelar la tasa de cambio en la compra de piezas importadas.
+                        </li>
+                        <li class="bg-black/50 p-2 rounded border-l-2 border-cyanNeon">
+                            <strong>2. Integración Vertical & Localización:</strong> Fabricación local de componentes y baterías cerca de los mercados finales para reducir fletes internacionales.
+                        </li>
+                        <li class="bg-black/50 p-2 rounded border-l-2 border-tesla">
+                            <strong>3. Financiamiento a Tasa Fija Estructurada:</strong> Mitigar riesgo de fluctuación de tasas de interés mediante créditos sindicados a largo plazo.
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Final Synthesis UNIPLEA -->
+                <div class="hud-border-tesla p-4 rounded-xl bg-black/80 space-y-3">
+                    <h3 class="text-sm font-bold font-orbitron text-white flex items-center">
+                        <i class="fa-solid fa-graduation-cap mr-2 text-tesla"></i> Conclusión del Equipo de Ingeniería Industrial
+                    </h3>
+                    <p class="text-xs text-gray-300 leading-relaxed font-sans">
+                        La ingeniería industrial moderna trasciende la optimización en planta. La competitividad de Tesla radica en combinar **eficiencia técnica en manufactura (Gigapress)** con **decisiones macroeconómicas acertadas** (mitigación de riesgo cambiario, maximización del excedente del consumidor y control del poder de mercado).
+                    </p>
+                    <div class="bg-cyanNeon/10 p-2.5 rounded border border-cyanNeon/30 text-[11px] font-mono text-cyanNeon text-center font-semibold">
+                        "El éxito en la dirección industrial depende de la sinergia entre innovación tecnológica, optimización de costos y gestión estratégica de riesgo."
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER NAV HUD & CLI TERMINAL -->
+    <footer class="w-full bg-black/90 border-t border-cyanNeon/30 p-3 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
+            
+            <!-- Terminal Auto-Pilot Diagnostic CLI Box -->
+            <div class="w-full md:w-2/3 bg-black border border-greenNeon/30 rounded p-2 text-[11px] font-mono h-16 overflow-y-auto flex flex-col justify-end" id="cliTerminal">
+                <div class="text-gray-500">// TESLA AUTOPILOT DIAGNOSTICS & TELEMETRY LOG</div>
+                <div class="text-greenNeon" id="cliOutput">> SYSTEM READY. Slide loaded: 1 of 6 [PORTADA].</div>
+            </div>
+
+            <!-- Slide Navigation Controls -->
+            <div class="flex items-center space-x-2">
+                <button onclick="changeSlide(-1)" class="px-4 py-2 border border-cyanNeon/60 text-cyanNeon hover:bg-cyanNeon/20 active:scale-95 transition rounded font-orbitron text-xs flex items-center space-x-1">
+                    <i class="fa-solid fa-chevron-left"></i>
+                    <span>ANTERIOR</span>
+                </button>
+                
+                <span class="font-orbitron font-bold text-xs text-white px-2" id="slideIndicator">01 / 06</span>
+
+                <button onclick="changeSlide(1)" class="px-4 py-2 bg-tesla border border-tesla text-white hover:bg-red-700 active:scale-95 transition rounded font-orbitron text-xs font-bold flex items-center space-x-1 glow-text-red">
+                    <span>SIGUIENTE</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AUDIO SYNTH & CANVAS JS LOGIC -->
+    <script>
+        // Global Presentation State
+        let currentSlide = 0;
+        const totalSlides = 6;
+        let audioEnabled = true;
+
+        // Slide Navigation
+        function updateSlideUI() {
+            for (let i = 0; i < totalSlides; i++) {
+                const el = document.getElementById(`slide-${i}`);
+                if (el) {
+                    if (i === currentSlide) {
+                        el.classList.remove('hidden');
+                        setTimeout(() => el.classList.add('slide-active'), 10);
+                    } else {
+                        el.classList.remove('slide-active');
+                        el.classList.add('hidden');
+                    }
+                }
+            }
+
+            document.getElementById('slideIndicator').innerText = `0${currentSlide + 1} / 0${totalSlides}`;
+            logCLI(`Navigated to Slide ${currentSlide + 1}: ${getSlideTitle(currentSlide)}`);
+            playBeep(440, 0.05);
+        }
+
+        function changeSlide(direction) {
+            currentSlide = (currentSlide + direction + totalSlides) % totalSlides;
+            updateSlideUI();
+        }
+
+        function getSlideTitle(index) {
+            const titles = [
+                "Portada UNIPLEA & Tesla Overview",
+                "Análisis del Consumidor & Excedente",
+                "Producción, Eficiencia y Costos",
+                "Estructura de Mercado Oligopólica",
+                "Riesgo Económico y Financiero",
+                "Propuesta de Solución & Conclusiones"
+            ];
+            return titles[index] || "Tesla HUD";
+        }
+
+        function logCLI(message) {
+            const cli = document.getElementById('cliOutput');
+            if (cli) {
+                const time = new Date().toLocaleTimeString();
+                cli.innerHTML = `<span class="text-gray-500">[${time}]</span> <span class="text-greenNeon">> ${message}</span>`;
+            }
+        }
+
+        // Web Audio API Synthesizer (No external sound files required)
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+
+        function toggleAudioSynth() {
+            audioEnabled = !audioEnabled;
+            const text = document.getElementById('soundText');
+            const icon = document.getElementById('soundIcon');
+            if (audioEnabled) {
+                text.innerText = "AUDIO ON";
+                icon.className = "fa-solid fa-volume-high";
+                logCLI("System Audio Synthesizer Enabled");
+            } else {
+                text.innerText = "AUDIO OFF";
+                icon.className = "fa-solid fa-volume-xmark";
+                logCLI("System Audio Muted");
+            }
+        }
+
+        function playBeep(freq, duration) {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + duration);
+            } catch (e) {
+                // Audio context block handling
+            }
+        }
+
+        function playRocketSound() {
+            if (!audioEnabled) return;
+            try {
+                const ctx = getAudioContext();
+                // Noise buffer for rocket engine rumble
+                const bufferSize = ctx.sampleRate * 1.5;
+                const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+
+                const noise = ctx.createBufferSource();
+                noise.buffer = buffer;
+
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, ctx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 1.5);
+
+                const gain = ctx.createGain();
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+
+                noise.start();
+            } catch (e) {}
+        }
+
+        // Keyboard Arrow Navigation
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                changeSlide(1);
+            } else if (e.key === 'ArrowLeft') {
+                changeSlide(-1);
+            }
+        });
+
+        // CANVAS 2D TESLA ROADSTER SPACEX ROCKET SIMULATOR
+        const canvas = document.getElementById('roadsterCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Roadster & SpaceX Thruster Simulation State
+        let isFlying = false;
+        let carX = canvas.width / 2;
+        let carY = canvas.height / 2 + 50;
+        let carVelY = 0;
+        let carAngle = 0;
+        let particles = [];
+        let stars = [];
+
+        // Generate Starfield
+        for (let i = 0; i < 80; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 1.8,
+                alpha: Math.random()
+            });
+        }
+
+        class Particle {
+            constructor(x, y, isPlasma) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 3;
+                this.vy = Math.random() * 5 + 3;
+                this.size = Math.random() * 5 + 2;
+                this.life = 1;
+                this.decay = Math.random() * 0.04 + 0.02;
+                this.isPlasma = isPlasma;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                this.size *= 0.95;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.isPlasma ? '#00f3ff' : '#e82127';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function drawTeslaRoadster(x, y, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+
+            // Car Shadow / Glow Aura
+            ctx.shadowColor = '#00f3ff';
+            ctx.shadowBlur = isFlying ? 25 : 10;
+
+            // Chassis Body (Red Tesla Roadster Silhouette)
+            ctx.fillStyle = '#e82127';
+            ctx.beginPath();
+            ctx.roundRect(-35, -18, 70, 36, 10);
+            ctx.fill();
+
+            // Windshield / Cabin Glass
+            ctx.fillStyle = '#06070a';
+            ctx.beginPath();
+            ctx.roundRect(-10, -12, 30, 24, 5);
+            ctx.fill();
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // SpaceX Cold-Gas Thruster Nozzles (Rear)
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(-42, -10, 8, 6);
+            ctx.fillRect(-42, 4, 8, 6);
+
+            // Headlights Glowing LED
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 15;
+            ctx.fillRect(32, -14, 4, 6);
+            ctx.fillRect(32, 8, 4, 6);
+
+            ctx.restore();
+        }
+
+        function animateCanvas() {
+            ctx.fillStyle = '#06070a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Stars
+            ctx.fillStyle = '#ffffff';
+            stars.forEach(s => {
+                ctx.globalAlpha = s.alpha;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                ctx.fill();
+                s.y += isFlying ? 2 : 0.2;
+                if (s.y > canvas.height) s.y = 0;
+            });
+            ctx.globalAlpha = 1;
+
+            // Update Rocket Flight Logic
+            if (isFlying) {
+                carY += carVelY;
+                carVelY -= 0.15; // Accelerate upwards
+                carAngle = -Math.PI / 12;
+
+                // Spawn SpaceX Plasma Thrust Particles
+                for (let i = 0; i < 4; i++) {
+                    particles.push(new Particle(carX - 35, carY + (Math.random() * 16 - 8), Math.random() > 0.4));
+                }
+
+                // Update Telemetry UI HUD
+                const speed = Math.round(Math.abs(carVelY) * 350 + 1000);
+                const alt = Math.round((canvas.height - carY) * 25);
+                document.getElementById('telemetryThrust').innerText = "180.5 kN";
+                document.getElementById('telemetrySpeed').innerText = `${speed} km/h`;
+                document.getElementById('telemetryAlt').innerText = `ALT-${alt} m`;
+
+                // Reset after flying high into orbit
+                if (carY < -100) {
+                    carY = canvas.height + 80;
+                    carVelY = -4;
+                } else if (carY > canvas.height / 2 + 50 && carVelY > 0) {
+                    // Touchdown back to center
+                    isFlying = false;
+                    carY = canvas.height / 2 + 50;
+                    carVelY = 0;
+                    carAngle = 0;
+                    document.getElementById('telemetryThrust').innerText = "0.0 kN";
+                    document.getElementById('telemetrySpeed').innerText = "0 km/h";
+                    document.getElementById('telemetryAlt').innerText = "ORBITAL-0";
+                    logCLI("SpaceX Roadster Rocket Landing Completed.");
+                }
+            }
+
+            // Draw Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw(ctx);
+                if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            // Draw Roadster
+            drawTeslaRoadster(carX, carY, carAngle);
+
+            requestAnimationFrame(animateCanvas);
+        }
+
+        // Click to Launch Rocket
+        canvas.addEventListener('click', () => {
+            isFlying = true;
+            carVelY = -6;
+            playRocketSound();
+            logCLI("CRITICAL: SpaceX Thrusters Ignited! Tesla Roadster Ascending to Orbit.");
+        });
+
+        // Initialize Animation Loop & UI State
+        window.onload = function() {
+            animateCanvas();
+            updateSlideUI();
+            logCLI("UNIPLEA Tesla Economic Model Initialized successfully.");
+        };
+    </script>
+</body>
+</html>
+```
